@@ -57,7 +57,7 @@ const ProductDetailsPage = () => {
         <div className="row g-5">
           {/* Left Side: Product Image */}
           <div className="col-lg-6">
-            <div className="fitgear-card d-flex align-items-center justify-content-center p-4 position-relative" style={{ height: '100%', minHeight: 450, background: 'var(--surface-2)' }}>
+            <div className="fitgear-card d-flex align-items-center justify-content-center p-4 position-relative" style={{ height: '100%', minHeight: 'min(450px, 50vh)', background: 'var(--surface-2)' }}>
               {product.discount > 0 && (
                 <span className="badge" style={{ position: 'absolute', top: 20, left: 20, background: '#E63946', color: '#fff', fontSize: '1rem', padding: '6px 12px', borderRadius: '50px' }}>
                   {product.discount}% OFF
@@ -66,7 +66,7 @@ const ProductDetailsPage = () => {
               <img 
                 src={product.image} 
                 alt={product.name} 
-                style={{ width: '100%', maxHeight: 450, objectFit: 'contain' }} 
+                style={{ width: '100%', maxHeight: 'min(450px, 50vh)', objectFit: 'contain' }} 
               />
             </div>
           </div>

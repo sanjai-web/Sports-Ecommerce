@@ -71,8 +71,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('users', JSON.stringify(updatedUsers));
   };
 
+  const updateUserRole = (userId, newRole) => {
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, role: newRole } : u);
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    
+    // If the currently logged in user's role is updated, update currentUser too
+    if (user && user.id === userId) {
+      const updatedCurrentUser = { ...user, role: newRole };
+      setUser(updatedCurrentUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, users, login, signup, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, users, login, signup, logout, updateProfile, updateUserRole }}>
       {children}
     </AuthContext.Provider>
   );

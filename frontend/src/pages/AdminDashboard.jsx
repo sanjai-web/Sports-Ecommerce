@@ -112,7 +112,7 @@ const EditModal = ({ product, onClose, onSave }) => {
 const AdminDashboard = () => {
   const { products, addProduct, editProduct, toggleHideProduct } = useContext(ProductContext);
   const { orders, updateOrderStatus } = useContext(CartContext);
-  const { users, user } = useContext(AuthContext);
+  const { users, user, updateUserRole } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -179,7 +179,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Tab Nav */}
-        <div className="d-flex gap-2 mb-4" style={{ borderBottom: '2px solid var(--border)' }}>
+        <div className="d-flex gap-2 mb-4" style={{ borderBottom: '2px solid var(--border)', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '4px' }}>
           {TABS.map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); setShowAddForm(false); }}
               style={{ background: 'none', border: 'none', padding: '0.6rem 1.25rem', fontWeight: 700, fontFamily: 'Outfit', cursor: 'pointer', fontSize: '0.95rem', color: activeTab === tab ? 'var(--primary)' : 'var(--text-mid)', borderBottom: `3px solid ${activeTab === tab ? 'var(--primary)' : 'transparent'}`, marginBottom: -2, textTransform: 'capitalize', transition: 'all 0.2s' }}>
@@ -505,9 +505,31 @@ const AdminDashboard = () => {
                       <td style={{ color: 'var(--text-mid)' }}>{u.email}</td>
                       <td style={{ color: 'var(--text-mid)' }}>{u.mobile}</td>
                       <td>
-                        <span style={{ background: u.role === 'admin' ? '#fde8e8' : 'var(--pale-blue)', color: u.role === 'admin' ? '#c0392b' : 'var(--primary)', fontSize: '0.78rem', fontWeight: 700, padding: '3px 10px', borderRadius: 50, textTransform: 'uppercase' }}>
-                          {u.role}
-                        </span>
+                        <select 
+                          className="form-select form-select-sm"
+                          style={{ 
+                            width: 'auto', 
+                            display: 'inline-block', 
+                            fontSize: '0.78rem', 
+                            fontWeight: 700, 
+                            borderRadius: 50,
+                            padding: '3px 25px 3px 12px',
+                            background: u.role === 'admin' ? '#fde8e8' : 'var(--pale-blue)', 
+                            color: u.role === 'admin' ? '#c0392b' : 'var(--primary)',
+                            border: 'none',
+                            cursor: u.id === user.id ? 'not-allowed' : 'pointer',
+                            textTransform: 'uppercase'
+                          }}
+                          value={u.role}
+                          onChange={(e) => {
+                            updateUserRole(u.id, e.target.value);
+                            toast.success(`${u.name}'s role updated to ${e.target.value.toUpperCase()}`);
+                          }}
+                          disabled={u.id === user.id}
+                        >
+                          <option value="user">USER</option>
+                          <option value="admin">ADMIN</option>
+                        </select>
                       </td>
                     </tr>
                   ))}

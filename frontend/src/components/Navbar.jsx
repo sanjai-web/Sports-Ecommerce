@@ -30,7 +30,7 @@ const Navbar = () => {
   return (
     <nav className="fitgear-navbar">
       <div className="container">
-        <div className="d-flex align-items-center justify-content-between w-100 gap-3">
+        <div className="d-flex align-items-center justify-content-between w-100 gap-2 gap-md-3">
 
           {/* Brand */}
           <Link to="/" className="navbar-brand d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
@@ -111,7 +111,7 @@ const Navbar = () => {
             ) : (
               <>
                 <Link to="/login" className="nav-link">Login</Link>
-                <Link to="/signup" className="btn btn-primary btn-sm px-4 py-2">Sign Up</Link>
+                <Link to="/signup" className="btn btn-primary btn-sm px-3 py-2">Sign Up</Link>
               </>
             )}
           </div>

@@ -18,7 +18,7 @@ const LandingPage = () => {
     <div>
       {/* ── HERO ── */}
       <section
-        className="page-hero d-flex align-items-center"
+        className="page-hero d-flex align-items-center py-5 py-lg-0"
         style={{ minHeight: '88vh', position: 'relative', overflow: 'hidden' }}
       >
         {/* decorative blobs */}
