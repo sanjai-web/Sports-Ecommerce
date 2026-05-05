@@ -4,9 +4,10 @@ import { CartContext } from '../contexts/CartContext';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaPlus, FaBoxOpen, FaUsers, FaLock, FaEdit, FaEyeSlash, FaEye } from 'react-icons/fa';
+import { FaPlus, FaBoxOpen, FaUsers, FaLock, FaEdit, FaEyeSlash, FaEye, FaChartBar, FaChartPie, FaRupeeSign, FaShoppingCart } from 'react-icons/fa';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-const TABS = ['products', 'orders', 'users'];
+const TABS = ['overview', 'products', 'orders', 'users'];
 const CATEGORIES = ['Weights', 'Footwear', 'Accessories', 'Supplements', 'Equipment', 'Apparel'];
 
 const emptyForm = { name: '', brand: '', category: 'Weights', price: '', discount: '0', image: '', popularity: '0' };
@@ -110,14 +111,16 @@ const EditModal = ({ product, onClose, onSave }) => {
 /* ─── Main Admin Dashboard ─── */
 const AdminDashboard = () => {
   const { products, addProduct, editProduct, toggleHideProduct } = useContext(ProductContext);
-  const { orders } = useContext(CartContext);
+  const { orders, updateOrderStatus } = useContext(CartContext);
   const { users, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('overview');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [addForm, setAddForm] = useState(emptyForm);
+  const [hoveredCustomer, setHoveredCustomer] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   if (!user || user.role !== 'admin') return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -180,7 +183,7 @@ const AdminDashboard = () => {
           {TABS.map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); setShowAddForm(false); }}
               style={{ background: 'none', border: 'none', padding: '0.6rem 1.25rem', fontWeight: 700, fontFamily: 'Outfit', cursor: 'pointer', fontSize: '0.95rem', color: activeTab === tab ? 'var(--primary)' : 'var(--text-mid)', borderBottom: `3px solid ${activeTab === tab ? 'var(--primary)' : 'transparent'}`, marginBottom: -2, textTransform: 'capitalize', transition: 'all 0.2s' }}>
-              {tab === 'products' ? `Products (${products.length})` : tab === 'orders' ? `Orders (${orders.length})` : `Users (${users.length})`}
+              {tab === 'products' ? `Products (${products.length})` : tab === 'orders' ? `Orders (${orders.length})` : tab === 'users' ? `Users (${users.length})` : 'Dashboard'}
             </button>
           ))}
         </div>
@@ -210,6 +213,119 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* ── Overview Dashboard ── */}
+        {activeTab === 'overview' && (
+          <div className="overview-tab">
+            {/* KPI Cards */}
+            <div className="row g-4 mb-4">
+              <div className="col-md-3">
+                <div className="fitgear-card p-4 d-flex align-items-center gap-3" style={{ borderLeft: '4px solid var(--primary)' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--pale-blue)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                    <FaRupeeSign />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600 }}>Total Revenue</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--navy)' }}>₹{orders.reduce((acc, curr) => acc + curr.totalAmount, 0).toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="fitgear-card p-4 d-flex align-items-center gap-3" style={{ borderLeft: '4px solid var(--accent)' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e0f4ff', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                    <FaBoxOpen />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600 }}>Total Products</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--navy)' }}>{products.length}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="fitgear-card p-4 d-flex align-items-center gap-3" style={{ borderLeft: '4px solid #1a7a45' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#d4f5e4', color: '#1a7a45', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                    <FaShoppingCart />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600 }}>Total Orders</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--navy)' }}>{orders.length}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="fitgear-card p-4 d-flex align-items-center gap-3" style={{ borderLeft: '4px solid #f39c12' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fdf3e2', color: '#f39c12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                    <FaUsers />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600 }}>Total Users</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--navy)' }}>{users.length}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts Row */}
+            <div className="row g-4 mb-4">
+              <div className="col-lg-8">
+                <div className="fitgear-card p-4 h-100">
+                  <h5 style={{ color: 'var(--navy)', marginBottom: '1.5rem', fontFamily: 'Outfit', fontWeight: 700 }}>Revenue & Orders by Payment Mode</h5>
+                  <div style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={
+                        Object.values(orders.reduce((acc, order) => {
+                          const mode = order.paymentMode || 'unknown';
+                          if (!acc[mode]) acc[mode] = { name: mode.toUpperCase(), Revenue: 0, Orders: 0 };
+                          acc[mode].Revenue += order.totalAmount;
+                          acc[mode].Orders += 1;
+                          return acc;
+                        }, {}))
+                      }>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-mid)', fontSize: 12 }} />
+                        <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-mid)', fontSize: 12 }} tickFormatter={(value) => `₹${value}`} />
+                        <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-mid)', fontSize: 12 }} />
+                        <Tooltip
+                          contentStyle={{ borderRadius: 'var(--radius-md)', border: 'none', boxShadow: 'var(--shadow-md)', fontFamily: 'Inter' }}
+                          formatter={(value, name) => name === 'Revenue' ? `₹${value}` : value}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: 20 }} />
+                        <Bar yAxisId="left" dataKey="Revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={40} />
+                        <Bar yAxisId="right" dataKey="Orders" fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+              <div className="col-lg-4">
+                <div className="fitgear-card p-4 h-100">
+                  <h5 style={{ color: 'var(--navy)', marginBottom: '1.5rem', fontFamily: 'Outfit', fontWeight: 700 }}>Products by Category</h5>
+                  <div style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={CATEGORIES.map(cat => ({ name: cat, value: products.filter(p => p.category === cat).length })).filter(d => d.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {CATEGORIES.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={['var(--primary)', 'var(--accent)', '#f39c12', '#1a7a45', '#9b59b6', '#e74c3c'][index % 6]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: 'var(--radius-md)', border: 'none', boxShadow: 'var(--shadow-md)', fontFamily: 'Inter' }} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -299,20 +415,68 @@ const AdminDashboard = () => {
           <div className="fitgear-card overflow-hidden">
             <div className="table-responsive">
               <table className="table fitgear-table mb-0">
-                <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th></tr></thead>
+                <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead>
                 <tbody>
                   {orders.length === 0
-                    ? <tr><td colSpan={5} className="text-center py-5" style={{ color: 'var(--text-mid)' }}>No orders yet.</td></tr>
+                    ? <tr><td colSpan={7} className="text-center py-5" style={{ color: 'var(--text-mid)' }}>No orders yet.</td></tr>
                     : orders.map(o => (
                       <tr key={o.id}>
                         <td style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-mid)' }}>{o.id}</td>
-                        <td>
-                          <div style={{ fontWeight: 600, color: 'var(--navy)' }}>{o.shippingDetails?.fullName}</div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-mid)' }}>{o.shippingDetails?.city}</div>
+                        <td 
+                          onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
+                          onMouseEnter={() => setHoveredCustomer(o.id)} 
+                          onMouseLeave={() => setHoveredCustomer(null)}
+                        >
+                          <div style={{ fontWeight: 600, color: 'var(--navy)', cursor: 'help' }}>{o.shippingDetails?.fullName}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-mid)', cursor: 'help' }}>{o.shippingDetails?.city}</div>
+                          
+                          {hoveredCustomer === o.id && (
+                            <div style={{ 
+                              position: 'fixed', 
+                              top: tooltipPos.y + 15, 
+                              left: tooltipPos.x + 15, 
+                              background: '#fff', 
+                              border: '1.5px solid var(--border)', 
+                              borderRadius: 'var(--radius-md)', 
+                              padding: '1rem', 
+                              boxShadow: '0 10px 25px rgba(0,29,57,0.15)', 
+                              zIndex: 9999,
+                              width: 'max-content',
+                              maxWidth: '320px',
+                              textAlign: 'left',
+                              pointerEvents: 'none'
+                            }}>
+                              <h6 style={{ margin: '0 0 0.5rem 0', color: 'var(--navy)', fontFamily: 'Outfit', fontSize: '0.95rem' }}>Shipping Details</h6>
+                              <div style={{ fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: '1.6' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}><strong style={{ color: 'var(--navy)', minWidth: 60 }}>Name:</strong> <span>{o.shippingDetails?.fullName}</span></div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}><strong style={{ color: 'var(--navy)', minWidth: 60 }}>Address:</strong> <span style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{o.shippingDetails?.address}</span></div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}><strong style={{ color: 'var(--navy)', minWidth: 60 }}>City:</strong> <span>{o.shippingDetails?.city}</span></div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}><strong style={{ color: 'var(--navy)', minWidth: 60 }}>PIN:</strong> <span>{o.shippingDetails?.zipCode}</span></div>
+                              </div>
+                            </div>
+                          )}
                         </td>
                         <td style={{ color: 'var(--text-mid)' }}>{new Date(o.date).toLocaleDateString()}</td>
+                        <td style={{ color: 'var(--text-mid)' }}>{o.items?.reduce((a, i) => a + i.quantity, 0) || 0}</td>
                         <td style={{ fontWeight: 700, color: 'var(--dark-blue)' }}>₹{o.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                         <td><span style={{ background: 'var(--pale-blue)', color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 700, padding: '3px 10px', borderRadius: 50, textTransform: 'uppercase' }}>{o.paymentMode}</span></td>
+                        <td>
+                          <select 
+                            className="form-select form-select-sm" 
+                            style={{ width: 'auto', display: 'inline-block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--navy)' }}
+                            value={o.status || 'Pending'} 
+                            onChange={(e) => {
+                              updateOrderStatus(o.id, e.target.value);
+                              toast.success(`Order ${o.id} marked as ${e.target.value}`);
+                            }}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        </td>
                       </tr>
                     ))}
                 </tbody>

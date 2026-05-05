@@ -149,7 +149,20 @@ const UserDashboard = () => {
                             <td>{new Date(order.date).toLocaleDateString()}</td>
                             <td>{order.items.reduce((a, i) => a + i.quantity, 0)} items</td>
                             <td style={{ fontWeight: 700, color: 'var(--dark-blue)' }}>₹{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                            <td><span className="badge badge-success" style={{ padding: '4px 10px', borderRadius: 50 }}>Processing</span></td>
+                            <td>
+                              <span 
+                                style={{ 
+                                  padding: '4px 10px', 
+                                  borderRadius: 50,
+                                  fontSize: '0.78rem',
+                                  fontWeight: 700,
+                                  background: (order.status === 'Delivered' || order.status === 'Shipped') ? '#d4f5e4' : order.status === 'Cancelled' ? '#fde8e8' : 'var(--pale-blue)',
+                                  color: (order.status === 'Delivered' || order.status === 'Shipped') ? '#1a7a45' : order.status === 'Cancelled' ? '#c0392b' : 'var(--primary)'
+                                }}
+                              >
+                                {order.status || 'Pending'}
+                              </span>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

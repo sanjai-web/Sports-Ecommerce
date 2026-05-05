@@ -62,6 +62,7 @@ export const CartProvider = ({ children }) => {
       userId,
       date: new Date().toISOString(),
       items: [...cart],
+      status: 'Pending',
       ...orderDetails
     };
     
@@ -77,6 +78,14 @@ export const CartProvider = ({ children }) => {
     return total + (price * item.quantity);
   }, 0);
 
+  const updateOrderStatus = (orderId, newStatus) => {
+    setOrders(prev => {
+      const updatedOrders = prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      return updatedOrders;
+    });
+  };
+
   return (
     <CartContext.Provider value={{ 
       cart, 
@@ -85,7 +94,8 @@ export const CartProvider = ({ children }) => {
       removeFromCart, 
       cartTotal, 
       placeOrder,
-      orders
+      orders,
+      updateOrderStatus
     }}>
       {children}
     </CartContext.Provider>

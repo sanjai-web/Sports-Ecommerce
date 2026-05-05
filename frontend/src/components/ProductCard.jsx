@@ -14,7 +14,9 @@ const ProductCard = ({ product }) => {
     ? product.price - (product.price * product.discount / 100)
     : product.price;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
     if (!user) {
       toast.info('Please login to add items to cart');
       navigate('/login');
@@ -25,7 +27,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="product-card">
+    <div className="product-card" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
       <div className="product-image-container">
         {product.discount > 0 && (
           <span className="discount-badge">{product.discount}% OFF</span>

@@ -15,6 +15,7 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import ProductDetailsPage from './pages/ProductDetailsPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} /> 
+            <Route path="/product/:id" element={<ProductDetailsPage />} />
           </Routes>
         </main>
         <Footer />
