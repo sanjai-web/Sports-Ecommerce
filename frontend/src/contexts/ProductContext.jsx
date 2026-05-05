@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { initialProducts } from '../utils/mockData';
+import { initialProducts, DATA_VERSION } from '../utils/mockData';
 
 export const ProductContext = createContext();
 
@@ -7,12 +7,14 @@ export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
+    const storedVersion = localStorage.getItem('productsVersion');
     const storedProducts = localStorage.getItem('products');
-    if (storedProducts) {
+    if (storedProducts && storedVersion === String(DATA_VERSION)) {
       setProducts(JSON.parse(storedProducts));
     } else {
       setProducts(initialProducts);
       localStorage.setItem('products', JSON.stringify(initialProducts));
+      localStorage.setItem('productsVersion', String(DATA_VERSION));
     }
   }, []);
 
