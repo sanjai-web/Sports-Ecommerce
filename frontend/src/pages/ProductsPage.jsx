@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { FaFilter, FaTimes } from 'react-icons/fa';
 
+
 const ProductsPage = () => {
   const { visibleProducts: products } = useContext(ProductContext);
   const [searchParams, setSearchParams] = useSearchParams();
