@@ -17,12 +17,23 @@ const UserDashboard = () => {
 
   const userOrders = orders.filter(o => o.userId === user.id);
 
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    updateProfile(formData);
+const handleUpdate = async (e) => {
+  e.preventDefault();
+
+  if (!formData.name || !formData.mobile || !formData.address) {
+    toast.error("Please fill all fields");
+    return;
+  }
+
+  const result = await updateProfile(formData);
+
+  if (result.success) {
+    toast.success("Profile updated successfully");
     setIsEditing(false);
-    toast.success('Profile updated!');
-  };
+  } else {
+    toast.error(result.message);
+  }
+};
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: FaUserEdit },
@@ -102,6 +113,7 @@ const UserDashboard = () => {
                         { label: 'Full Name', value: user.name, icon: FaUserEdit },
                         { label: 'Email Address', value: user.email, icon: FaEnvelope },
                         { label: 'Mobile', value: user.mobile, icon: FaPhone },
+                        { label: 'Orders', value: userOrders.length, icon: FaBox }
                       ].map(({ label, value, icon: Icon }) => (
                         <div className="col-md-6" key={label}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)' }}>

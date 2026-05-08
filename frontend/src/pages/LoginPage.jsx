@@ -10,13 +10,23 @@ const LoginPage = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!identifier || !password) { toast.error('Please fill in all fields'); return; }
-    const result = login(identifier, password);
-    if (result.success) { toast.success('Welcome back!'); navigate('/'); }
-    else toast.error(result.message);
-  };
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!identifier || !password) {
+    toast.error("Please fill in all fields");
+    return;
+  }
+
+  const result = await login(identifier, password);
+
+  if (result.success) {
+    toast.success("Welcome Back!");
+    navigate("/");
+  } else {
+    toast.error(result.message);
+  }
+};
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '2rem 0' }}>
@@ -53,11 +63,6 @@ const LoginPage = () => {
                 Don't have an account?{' '}
                 <Link to="/signup" style={{ color: 'var(--accent)', fontWeight: 600 }}>Sign up</Link>
               </div>
-            </div>
-
-            {/* Demo note */}
-            <div className="text-center mt-4 p-3" style={{ background: 'var(--pale-blue)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', color: 'var(--dark-blue)' }}>
-              <strong>Demo:</strong> Sign up first. The first registered user becomes Admin automatically.
             </div>
           </div>
         </div>

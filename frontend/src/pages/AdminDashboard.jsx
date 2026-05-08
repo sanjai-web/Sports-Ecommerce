@@ -12,6 +12,8 @@ const CATEGORIES = ['Weights', 'Footwear', 'Accessories', 'Supplements', 'Equipm
 
 const emptyForm = { name: '', brand: '', category: 'Weights', price: '', discount: '0', image: '', popularity: '0' };
 
+
+
 /* ─── Edit Modal ─── */
 const EditModal = ({ product, onClose, onSave }) => {
   const [form, setForm] = useState({
