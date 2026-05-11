@@ -1,4 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const CartContext = createContext();
 
@@ -6,95 +9,97 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
 
+  // Load cart from localStorage
   useEffect(() => {
-    const storedCart = localStorage.getItem('cart');
-    if (storedCart) {
-      setCart(JSON.parse(storedCart));
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
     }
-
-    const storedOrders = localStorage.getItem('orders');
-    if (storedOrders) {
-      setOrders(JSON.parse(storedOrders));
+    
+    // Load orders from localStorage (in a real app, fetch from API)
+    const savedOrders = localStorage.getItem('orders');
+    if (savedOrders) {
+      setOrders(JSON.parse(savedOrders));
     }
   }, []);
 
-  const addToCart = (product) => {
+  // Save cart to localStorage
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const addToCart = (product, quantity = 1) => {
     setCart(prev => {
-      const existingItem = prev.find(item => item.id === product.id);
-      let newCart;
-      if (existingItem) {
-        newCart = prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+      const existing = prev.find(item => item.product._id === product._id);
+      if (existing) {
+        return prev.map(item =>
+          item.product._id === product._id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
         );
-      } else {
-        newCart = [...prev, { ...product, quantity: 1 }];
       }
-      localStorage.setItem('cart', JSON.stringify(newCart));
-      return newCart;
+      return [...prev, { product, quantity }];
     });
   };
 
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity < 1) return;
-    setCart(prev => {
-      const newCart = prev.map(item => item.id === id ? { ...item, quantity: newQuantity } : item);
-      localStorage.setItem('cart', JSON.stringify(newCart));
-      return newCart;
-    });
+  const removeFromCart = (productId) => {
+    setCart(prev => prev.filter(item => item.product._id !== productId));
   };
 
-  const removeFromCart = (id) => {
-    setCart(prev => {
-      const newCart = prev.filter(item => item.id !== id);
-      localStorage.setItem('cart', JSON.stringify(newCart));
-      return newCart;
-    });
+  const updateQuantity = (productId, quantity) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart(prev =>
+      prev.map(item =>
+        item.product._id === productId ? { ...item, quantity } : item
+      )
+    );
   };
 
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem('cart');
   };
 
-  const placeOrder = (orderDetails, userId) => {
+  const placeOrder = (orderDetails) => {
     const newOrder = {
-      id: `ORD-${Date.now()}`,
-      userId,
+      id: Date.now().toString(),
+      ...orderDetails,
+      items: cart,
       date: new Date().toISOString(),
-      items: [...cart],
       status: 'Pending',
-      ...orderDetails
+      totalAmount: cart.reduce((sum, item) => sum + (item.product.price - (item.product.price * (item.product.discount || 0) / 100)) * item.quantity, 0)
     };
     
-    const updatedOrders = [...orders, newOrder];
-    setOrders(updatedOrders);
-    localStorage.setItem('orders', JSON.stringify(updatedOrders));
+    setOrders(prev => [newOrder, ...prev]);
+    localStorage.setItem('orders', JSON.stringify([newOrder, ...orders]));
     clearCart();
     return newOrder;
   };
 
-  const cartTotal = cart.reduce((total, item) => {
-    const price = item.price - (item.price * (item.discount || 0) / 100);
-    return total + (price * item.quantity);
-  }, 0);
-
-  const updateOrderStatus = (orderId, newStatus) => {
-    setOrders(prev => {
-      const updatedOrders = prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
-      localStorage.setItem('orders', JSON.stringify(updatedOrders));
-      return updatedOrders;
-    });
+  const updateOrderStatus = (orderId, status) => {
+    setOrders(prev =>
+      prev.map(order =>
+        order.id === orderId ? { ...order, status } : order
+      )
+    );
+    localStorage.setItem('orders', JSON.stringify(
+      orders.map(order =>
+        order.id === orderId ? { ...order, status } : order
+      )
+    ));
   };
 
   return (
-    <CartContext.Provider value={{ 
-      cart, 
-      addToCart, 
-      updateQuantity, 
-      removeFromCart, 
-      cartTotal, 
-      placeOrder,
+    <CartContext.Provider value={{
+      cart,
       orders,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      placeOrder,
       updateOrderStatus
     }}>
       {children}

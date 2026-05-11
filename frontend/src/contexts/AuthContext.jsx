@@ -1,64 +1,56 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = `${API_URL}/api/auth`;
+
 export const AuthContext = createContext();
 
-const API = "http://localhost:5000/api/auth";
+export const AuthProvider = ({ children }) => {
+  // Current logged in user
+  const [user, setUser] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const AuthProvider = ({ children }) => {
-  // ================= CURRENT USER =================
+  // Fetch all users from backend (for admin)
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      if (response.data.success) {
+        setUsers(response.data.users);
+      }
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+  };
 
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("fitgear-user")) || null
-  );
-
-  // ================= ALL USERS =================
-
-  const [users, setUsers] = useState(
-    JSON.parse(localStorage.getItem("fitgear-users")) || []
-  );
-
-  // ================= SAVE USERS =================
-
+  // Check for stored user on initial load
   useEffect(() => {
-    localStorage.setItem(
-      "fitgear-users",
-      JSON.stringify(users)
-    );
-  }, [users]);
+    const storedUser = localStorage.getItem("fitgear-user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    fetchUsers();
+    setLoading(false);
+  }, []);
 
-  // ================= SIGNUP =================
-
+  // Signup
   const signup = async (userData) => {
     try {
-      const response = await axios.post(
-        `${API}/signup`,
-        userData
-      );
-
+      const response = await axios.post(`${API}/signup`, userData);
       if (response.data.success) {
-        const newUser = {
-          id: Date.now().toString(),
-          ...userData,
-          role: users.length === 0 ? "admin" : "user",
-        };
-
-        setUsers((prev) => [...prev, newUser]);
+        await fetchUsers(); // Refresh user list
       }
-
       return response.data;
     } catch (error) {
       return {
         success: false,
-        message:
-          error.response?.data?.message ||
-          "Signup failed",
+        message: error.response?.data?.message || "Signup failed",
       };
     }
   };
 
-  // ================= LOGIN =================
-
+  // Login
   const login = async (identifier, password) => {
     try {
       const response = await axios.post(`${API}/login`, {
@@ -68,78 +60,70 @@ const AuthProvider = ({ children }) => {
 
       if (response.data.success) {
         setUser(response.data.user);
-
-        localStorage.setItem(
-          "fitgear-user",
-          JSON.stringify(response.data.user)
-        );
+        localStorage.setItem("fitgear-user", JSON.stringify(response.data.user));
+        await fetchUsers(); // Refresh user list after login
       }
 
       return response.data;
     } catch (error) {
       return {
         success: false,
-        message:
-          error.response?.data?.message ||
-          "Login failed",
+        message: error.response?.data?.message || "Login failed",
       };
     }
   };
 
-  // ================= LOGOUT =================
-
+  // Logout
   const logout = () => {
     setUser(null);
-
     localStorage.removeItem("fitgear-user");
   };
 
-
-  
-  // ================= UPDATE PROFILE =================
-
+  // Update user profile
   const updateProfile = async (updatedData) => {
+    if (!user) {
+      return {
+        success: false,
+        message: "No user logged in",
+      };
+    }
+
     try {
-      const response = await axios.put(
-        `${API}/update-profile/${user.id}`,
-        updatedData
-      );
+      const response = await axios.put(`${API}/update-profile/${user.id}`, updatedData);
 
       if (response.data.success) {
         setUser(response.data.user);
-
-        localStorage.setItem(
-          "fitgear-user",
-          JSON.stringify(response.data.user)
-        );
+        localStorage.setItem("fitgear-user", JSON.stringify(response.data.user));
+        await fetchUsers(); // Refresh user list
       }
 
       return response.data;
     } catch (error) {
       return {
         success: false,
-        message:
-          error.response?.data?.message ||
-          "Profile update failed",
+        message: error.response?.data?.message || "Profile update failed",
       };
     }
   };
 
-  
-
-  // ================= UPDATE USER ROLE =================
-
-  const updateUserRole = (userId, role) => {
-    const updatedUsers = users.map((u) =>
-      u.id === userId
-        ? {
-            ...u,
-            role,
-          }
-        : u
-    );
-
-    setUsers(updatedUsers);
+  // Update user role (admin only)
+  const updateUserRole = async (userId, role) => {
+    try {
+      const response = await axios.put(`${API}/update-role/${userId}`, { role });
+      if (response.data.success) {
+        // Update local users state
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role } : u))
+        );
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to update role",
+      };
+    }
   };
 
   return (
@@ -147,11 +131,13 @@ const AuthProvider = ({ children }) => {
       value={{
         user,
         users,
+        loading,
         signup,
         login,
         logout,
         updateProfile,
         updateUserRole,
+        refreshUsers: fetchUsers,
       }}
     >
       {children}
@@ -159,8 +145,4 @@ const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthProvider;  
-
-
-
-
+export default AuthProvider;

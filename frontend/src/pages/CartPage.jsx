@@ -68,8 +68,6 @@ const CartPage = () => {
               })}
             </div>
           </div>
-
-          {/* Summary */}
           <div className="col-lg-4">
             <div className="fitgear-card p-4 sticky-top" style={{ top: 80 }}>
               <h5 style={{ color: 'var(--navy)', marginBottom: '1.25rem', fontFamily: 'Outfit' }}>Order Summary</h5>

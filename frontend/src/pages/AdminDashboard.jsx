@@ -4,15 +4,13 @@ import { CartContext } from '../contexts/CartContext';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaPlus, FaBoxOpen, FaUsers, FaLock, FaEdit, FaEyeSlash, FaEye, FaChartBar, FaChartPie, FaRupeeSign, FaShoppingCart } from 'react-icons/fa';
+import { FaPlus, FaBoxOpen, FaUsers, FaLock, FaEdit, FaEyeSlash, FaEye, FaChartBar, FaChartPie, FaRupeeSign, FaShoppingCart, FaTrash } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const TABS = ['overview', 'products', 'orders', 'users'];
 const CATEGORIES = ['Weights', 'Footwear', 'Accessories', 'Supplements', 'Equipment', 'Apparel'];
 
 const emptyForm = { name: '', brand: '', category: 'Weights', price: '', discount: '0', image: '', popularity: '0' };
-
-
 
 /* ─── Edit Modal ─── */
 const EditModal = ({ product, onClose, onSave }) => {
@@ -42,13 +40,11 @@ const EditModal = ({ product, onClose, onSave }) => {
   };
 
   return (
-    /* Backdrop */
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,29,57,0.45)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: 600, boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}>
-        {/* Modal Header */}
         <div style={{ background: 'linear-gradient(135deg, var(--dark-blue), var(--accent))', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h5 style={{ margin: 0, color: '#fff', fontFamily: 'Outfit', fontWeight: 700 }}>Edit Product</h5>
@@ -57,7 +53,6 @@ const EditModal = ({ product, onClose, onSave }) => {
           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>&times;</button>
         </div>
 
-        {/* Modal Body */}
         <form onSubmit={handleSave}>
           <div style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
             <div className="row g-3">
@@ -99,7 +94,6 @@ const EditModal = ({ product, onClose, onSave }) => {
             </div>
           </div>
 
-          {/* Modal Footer */}
           <div style={{ padding: '1rem 1.5rem', borderTop: '1.5px solid var(--border)', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', background: 'var(--surface-2)' }}>
             <button type="button" className="btn btn-outline-primary px-4" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary px-5">Save Changes</button>
@@ -112,7 +106,7 @@ const EditModal = ({ product, onClose, onSave }) => {
 
 /* ─── Main Admin Dashboard ─── */
 const AdminDashboard = () => {
-  const { products, addProduct, editProduct, toggleHideProduct } = useContext(ProductContext);
+  const { products, addProduct, editProduct, toggleHideProduct, deleteProduct, refreshProducts } = useContext(ProductContext);
   const { orders, updateOrderStatus } = useContext(CartContext);
   const { users, user, updateUserRole } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -123,6 +117,7 @@ const AdminDashboard = () => {
   const [addForm, setAddForm] = useState(emptyForm);
   const [hoveredCustomer, setHoveredCustomer] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!user || user.role !== 'admin') return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -135,29 +130,76 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const handleAddProduct = (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!addForm.name || !addForm.price || !addForm.image || !addForm.brand) { toast.error('Fill all required fields'); return; }
-    addProduct({ ...addForm, id: Date.now().toString(), price: parseFloat(addForm.price), discount: parseInt(addForm.discount), popularity: parseInt(addForm.popularity) });
-    toast.success('Product added!');
-    setShowAddForm(false);
-    setAddForm(emptyForm);
+    if (!addForm.name || !addForm.price || !addForm.image || !addForm.brand) {
+      toast.error('Fill all required fields');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const newProduct = {
+        name: addForm.name,
+        brand: addForm.brand,
+        category: addForm.category,
+        price: parseFloat(addForm.price),
+        discount: parseInt(addForm.discount) || 0,
+        image: addForm.image,
+        popularity: parseInt(addForm.popularity) || 0,
+      };
+      
+      await addProduct(newProduct);
+      toast.success('Product added successfully!');
+      setShowAddForm(false);
+      setAddForm(emptyForm);
+      await refreshProducts(); // Refresh the product list
+    } catch (error) {
+      toast.error('Failed to add product. Please try again.');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleEditSave = (updatedProduct) => {
-    editProduct(updatedProduct);
-    setEditingProduct(null);
-    toast.success('Product updated!');
+  const handleEditSave = async (updatedProduct) => {
+    try {
+      await editProduct(updatedProduct);
+      setEditingProduct(null);
+      toast.success('Product updated successfully!');
+      await refreshProducts();
+    } catch (error) {
+      toast.error('Failed to update product. Please try again.');
+      console.error(error);
+    }
   };
 
-  const handleToggleHide = (product) => {
-    toggleHideProduct(product.id);
-    toast.info(product.hidden ? `"${product.name}" is now visible.` : `"${product.name}" hidden from shop.`);
+  const handleToggleHide = async (product) => {
+    try {
+      await toggleHideProduct(product._id);
+      toast.info(product.hidden ? `"${product.name}" is now visible.` : `"${product.name}" hidden from shop.`);
+      await refreshProducts();
+    } catch (error) {
+      toast.error('Failed to update product visibility.');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteProduct = async (product) => {
+    if (window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+      try {
+        await deleteProduct(product._id);
+        toast.success(`"${product.name}" has been deleted.`);
+        await refreshProducts();
+      } catch (error) {
+        toast.error('Failed to delete product. Please try again.');
+        console.error(error);
+      }
+    }
   };
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '2rem 0 4rem' }}>
-      {/* Edit Modal */}
       {editingProduct && (
         <EditModal
           product={editingProduct}
@@ -167,7 +209,6 @@ const AdminDashboard = () => {
       )}
 
       <div className="container">
-        {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <div>
             <h2 style={{ color: 'var(--navy)', marginBottom: 4 }}>Admin <span style={{ color: 'var(--accent)' }}>Dashboard</span></h2>
@@ -180,7 +221,6 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* Tab Nav */}
         <div className="d-flex gap-2 mb-4" style={{ borderBottom: '2px solid var(--border)', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '4px' }}>
           {TABS.map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); setShowAddForm(false); }}
@@ -190,7 +230,6 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* Add Product Form */}
         {activeTab === 'products' && showAddForm && (
           <div className="fitgear-card p-4 mb-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -199,18 +238,20 @@ const AdminDashboard = () => {
             </div>
             <form onSubmit={handleAddProduct}>
               <div className="row g-3">
-                <div className="col-md-6"><label className="form-label">Product Name *</label><input type="text" className="form-control" placeholder="e.g. Yoga Mat Pro" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} /></div>
-                <div className="col-md-6"><label className="form-label">Brand *</label><input type="text" className="form-control" placeholder="Brand name" value={addForm.brand} onChange={e => setAddForm({ ...addForm, brand: e.target.value })} /></div>
-                <div className="col-12"><label className="form-label">Image URL *</label><input type="url" className="form-control" placeholder="https://..." value={addForm.image} onChange={e => setAddForm({ ...addForm, image: e.target.value })} /></div>
+                <div className="col-md-6"><label className="form-label">Product Name *</label><input type="text" className="form-control" placeholder="e.g. Yoga Mat Pro" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} required /></div>
+                <div className="col-md-6"><label className="form-label">Brand *</label><input type="text" className="form-control" placeholder="Brand name" value={addForm.brand} onChange={e => setAddForm({ ...addForm, brand: e.target.value })} required /></div>
+                <div className="col-12"><label className="form-label">Image URL *</label><input type="url" className="form-control" placeholder="https://..." value={addForm.image} onChange={e => setAddForm({ ...addForm, image: e.target.value })} required /></div>
                 <div className="col-md-4"><label className="form-label">Category</label>
                   <select className="form-select" value={addForm.category} onChange={e => setAddForm({ ...addForm, category: e.target.value })}>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <div className="col-md-4"><label className="form-label">Price (₹) *</label><input type="number" className="form-control" placeholder="0" value={addForm.price} onChange={e => setAddForm({ ...addForm, price: e.target.value })} /></div>
+                <div className="col-md-4"><label className="form-label">Price (₹) *</label><input type="number" className="form-control" placeholder="0" value={addForm.price} onChange={e => setAddForm({ ...addForm, price: e.target.value })} required /></div>
                 <div className="col-md-4"><label className="form-label">Discount (%)</label><input type="number" className="form-control" placeholder="0" value={addForm.discount} onChange={e => setAddForm({ ...addForm, discount: e.target.value })} /></div>
                 <div className="col-12 d-flex gap-2 mt-2">
-                  <button type="submit" className="btn btn-primary px-4">Save Product</button>
+                  <button type="submit" className="btn btn-primary px-4" disabled={isSubmitting}>
+                    {isSubmitting ? 'Adding...' : 'Save Product'}
+                  </button>
                   <button type="button" className="btn btn-outline-primary px-4" onClick={() => { setShowAddForm(false); setAddForm(emptyForm); }}>Cancel</button>
                 </div>
               </div>
@@ -218,10 +259,8 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* ── Overview Dashboard ── */}
         {activeTab === 'overview' && (
           <div className="overview-tab">
-            {/* KPI Cards */}
             <div className="row g-4 mb-4">
               <div className="col-md-3">
                 <div className="fitgear-card p-4 d-flex align-items-center gap-3" style={{ borderLeft: '4px solid var(--primary)' }}>
@@ -269,7 +308,6 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Charts Row */}
             <div className="row g-4 mb-4">
               <div className="col-lg-8">
                 <div className="fitgear-card p-4 h-100">
@@ -289,10 +327,7 @@ const AdminDashboard = () => {
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-mid)', fontSize: 12 }} />
                         <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-mid)', fontSize: 12 }} tickFormatter={(value) => `₹${value}`} />
                         <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-mid)', fontSize: 12 }} />
-                        <Tooltip
-                          contentStyle={{ borderRadius: 'var(--radius-md)', border: 'none', boxShadow: 'var(--shadow-md)', fontFamily: 'Inter' }}
-                          formatter={(value, name) => name === 'Revenue' ? `₹${value}` : value}
-                        />
+                        <Tooltip contentStyle={{ borderRadius: 'var(--radius-md)', border: 'none', boxShadow: 'var(--shadow-md)', fontFamily: 'Inter' }} formatter={(value, name) => name === 'Revenue' ? `₹${value}` : value} />
                         <Legend wrapperStyle={{ paddingTop: 20 }} />
                         <Bar yAxisId="left" dataKey="Revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} barSize={40} />
                         <Bar yAxisId="right" dataKey="Orders" fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={40} />
@@ -331,7 +366,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* ── Products Table ── */}
         {activeTab === 'products' && !showAddForm && (
           <div className="fitgear-card overflow-hidden">
             <div className="table-responsive">
@@ -349,40 +383,32 @@ const AdminDashboard = () => {
                 </thead>
                 <tbody>
                   {products.map(p => (
-                    <tr key={p.id} style={{ opacity: p.hidden ? 0.55 : 1 }}>
-                      {/* Thumbnail */}
+                    <tr key={p._id} style={{ opacity: p.hidden ? 0.55 : 1 }}>
                       <td>
                         <div style={{ width: 48, height: 48, background: p.hidden ? '#f0f0f0' : 'var(--pale-blue)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           <img src={p.image} alt={p.name} style={{ maxWidth: 38, maxHeight: 38, objectFit: 'contain' }} />
                         </div>
-                      </td>
-                      {/* Name */}
+                       </td>
                       <td>
                         <div style={{ fontWeight: 600, color: p.hidden ? 'var(--text-light)' : 'var(--navy)', fontSize: '0.92rem' }}>{p.name}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{p.brand}</div>
                       </td>
-                      {/* Category */}
                       <td>
                         <span style={{ background: 'var(--pale-blue)', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 50 }}>{p.category}</span>
                       </td>
-                      {/* Price */}
                       <td style={{ fontWeight: 700, color: 'var(--dark-blue)' }}>₹{p.price.toLocaleString()}</td>
-                      {/* Discount */}
                       <td>
                         {p.discount > 0
                           ? <span style={{ color: '#1a7a45', fontWeight: 700 }}>{p.discount}% OFF</span>
                           : <span style={{ color: 'var(--text-light)' }}>—</span>}
                       </td>
-                      {/* Status */}
                       <td>
                         {p.hidden
                           ? <span style={{ background: '#fde8e8', color: '#c0392b', fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 50 }}>Hidden</span>
                           : <span style={{ background: '#d4f5e4', color: '#1a7a45', fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 50 }}>Visible</span>}
                       </td>
-                      {/* Actions */}
                       <td style={{ textAlign: 'center' }}>
                         <div className="d-flex align-items-center justify-content-center gap-2">
-                          {/* Edit */}
                           <button
                             onClick={() => setEditingProduct(p)}
                             title="Edit product"
@@ -392,7 +418,6 @@ const AdminDashboard = () => {
                           >
                             <FaEdit size={12} /> Edit
                           </button>
-                          {/* Hide / Unhide */}
                           <button
                             onClick={() => handleToggleHide(p)}
                             title={p.hidden ? 'Make visible' : 'Hide from shop'}
@@ -401,6 +426,15 @@ const AdminDashboard = () => {
                             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                           >
                             {p.hidden ? <><FaEye size={12} /> Show</> : <><FaEyeSlash size={12} /> Hide</>}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p)}
+                            title="Delete product"
+                            style={{ background: '#fde8e8', border: 'none', color: '#c0392b', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600, fontSize: '0.82rem', transition: 'all 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                          >
+                            <FaTrash size={12} /> Delete
                           </button>
                         </div>
                       </td>
@@ -412,7 +446,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* ── Orders Table ── */}
         {activeTab === 'orders' && (
           <div className="fitgear-card overflow-hidden">
             <div className="table-responsive">
@@ -487,7 +520,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* ── Users Table ── */}
         {activeTab === 'users' && (
           <div className="fitgear-card overflow-hidden">
             <div className="table-responsive">

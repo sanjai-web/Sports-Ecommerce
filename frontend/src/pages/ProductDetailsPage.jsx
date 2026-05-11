@@ -4,20 +4,32 @@ import { ProductContext } from '../contexts/ProductContext';
 import { CartContext } from '../contexts/CartContext';
 import { AuthContext } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { FaShoppingCart, FaStar, FaArrowLeft, FaCheckCircle, FaTruck } from 'react-icons/fa';
+import { FaShoppingCart, FaStar, FaArrowLeft, FaCheckCircle, FaTruck, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
 
 const ProductDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products } = useContext(ProductContext);
+  const { products, loading } = useContext(ProductContext);
   const { addToCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
 
-  const product = products.find(p => p.id === id);
+  // Find product using _id (MongoDB uses _id, not id)
+  const product = products.find(p => p._id === id);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '4rem 0', textAlign: 'center' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -31,6 +43,12 @@ const ProductDetailsPage = () => {
   const discountedPrice = product.discount > 0
     ? product.price - (product.price * product.discount / 100)
     : product.price;
+
+  // Calculate star rating based on popularity (0-5 scale)
+  const rating = Math.min(5, Math.max(0, (product.popularity || 0) / 20));
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
   const handleAddToCart = () => {
     if (!user) {
@@ -57,16 +75,19 @@ const ProductDetailsPage = () => {
         <div className="row g-5">
           {/* Left Side: Product Image */}
           <div className="col-lg-6">
-            <div className="fitgear-card d-flex align-items-center justify-content-center p-4 position-relative" style={{ height: '100%', minHeight: 'min(450px, 50vh)', background: 'var(--surface-2)' }}>
+            <div className="fitgear-card d-flex align-items-center justify-content-center p-4 position-relative" style={{ height: '100%', minHeight: 'min(450px, 50vh)', background: 'var(--surface-2)', borderRadius: 'var(--radius-lg)' }}>
               {product.discount > 0 && (
-                <span className="badge" style={{ position: 'absolute', top: 20, left: 20, background: '#E63946', color: '#fff', fontSize: '1rem', padding: '6px 12px', borderRadius: '50px' }}>
+                <span className="badge" style={{ position: 'absolute', top: 20, left: 20, background: '#E63946', color: '#fff', fontSize: '1rem', padding: '6px 12px', borderRadius: '50px', fontWeight: 700, zIndex: 1 }}>
                   {product.discount}% OFF
                 </span>
               )}
               <img 
                 src={product.image} 
                 alt={product.name} 
-                style={{ width: '100%', maxHeight: 'min(450px, 50vh)', objectFit: 'contain' }} 
+                style={{ width: '100%', maxHeight: 'min(450px, 50vh)', objectFit: 'contain' }}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/400x400?text=No+Image';
+                }}
               />
             </div>
           </div>
@@ -76,17 +97,18 @@ const ProductDetailsPage = () => {
             <div style={{ textTransform: 'uppercase', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>
               {product.brand}
             </div>
-            <h1 style={{ color: 'var(--navy)', fontFamily: 'Outfit', fontWeight: 800, fontSize: '2.5rem', marginBottom: '1rem', lineHeight: 1.2 }}>
+            <h1 style={{ color: 'var(--navy)', fontFamily: 'Outfit', fontWeight: 800, fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', marginBottom: '1rem', lineHeight: 1.2 }}>
               {product.name}
             </h1>
 
             <div className="d-flex align-items-center gap-2 mb-4">
-              <div style={{ color: '#F59E0B', display: 'flex' }}>
-                {[1,2,3,4].map(i => <FaStar key={i} />)}
-                <FaStar style={{ color: '#D1D5DB' }} />
+              <div style={{ color: '#F59E0B', display: 'flex', gap: '2px' }}>
+                {[...Array(fullStars)].map((_, i) => <FaStar key={`full-${i}`} />)}
+                {hasHalfStar && <FaStarHalfAlt />}
+                {[...Array(emptyStars)].map((_, i) => <FaRegStar key={`empty-${i}`} />)}
               </div>
               <span style={{ color: 'var(--text-mid)', fontWeight: 600, fontSize: '0.9rem' }}>
-                4.0 ({product.popularity} Reviews)
+                {rating.toFixed(1)} ({product.popularity || 0} reviews)
               </span>
             </div>
 

@@ -27,7 +27,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="product-card" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
+    <div className="product-card" onClick={() => navigate(`/product/${product._id}`)} style={{ cursor: 'pointer' }}>
       <div className="product-image-container">
         {product.discount > 0 && (
           <span className="discount-badge">{product.discount}% OFF</span>

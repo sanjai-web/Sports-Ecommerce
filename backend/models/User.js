@@ -33,6 +33,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "user",
     },
+
+    totalOrders: {
+      type: Number,
+      default: 0,
+    },
+
+    totalSpent: {
+      type: Number,
+      default: 0,
+    },
+
   },
   { timestamps: true }
 );

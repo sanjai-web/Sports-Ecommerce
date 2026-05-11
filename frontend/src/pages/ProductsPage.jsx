@@ -5,9 +5,8 @@ import ProductCard from '../components/ProductCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { FaFilter, FaTimes } from 'react-icons/fa';
 
-
 const ProductsPage = () => {
-  const { visibleProducts: products } = useContext(ProductContext);
+  const { visibleProducts: products, loading: productsLoading } = useContext(ProductContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -24,9 +23,12 @@ const ProductsPage = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(t);
-  }, []);
+    // Show loading while products are being fetched
+    if (!productsLoading) {
+      const timer = setTimeout(() => setLoading(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [productsLoading]);
 
   const categoryList = ['All', ...new Set(products.map(p => p.category))];
 
@@ -48,7 +50,11 @@ const ProductsPage = () => {
   });
 
   const clearFilters = () => {
-    setCategory(''); setSearchQuery(''); setPriceRange(50000); setSortOption('popularity'); setSearchParams({});
+    setCategory(''); 
+    setSearchQuery(''); 
+    setPriceRange(50000); 
+    setSortOption('popularity'); 
+    setSearchParams({});
   };
 
   const FilterPanel = () => (
@@ -69,7 +75,11 @@ const ProductsPage = () => {
           value={searchQuery}
           onChange={e => {
             setSearchQuery(e.target.value);
-            e.target.value ? searchParams.set('search', e.target.value) : searchParams.delete('search');
+            if (e.target.value) {
+              searchParams.set('search', e.target.value);
+            } else {
+              searchParams.delete('search');
+            }
             setSearchParams(searchParams);
           }}
         />
@@ -84,7 +94,11 @@ const ProductsPage = () => {
               onClick={() => {
                 const val = cat === 'All' ? '' : cat;
                 setCategory(val);
-                val ? searchParams.set('category', val) : searchParams.delete('category');
+                if (val) {
+                  searchParams.set('category', val);
+                } else {
+                  searchParams.delete('category');
+                }
                 setSearchParams(searchParams);
               }}
               style={{
@@ -119,7 +133,6 @@ const ProductsPage = () => {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      {/* Page Header */}
       <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--dark-blue) 100%)', padding: '2.5rem 0' }}>
         <div className="container">
           <h2 style={{ color: '#fff', marginBottom: '0.25rem' }}>Shop <span style={{ color: '#7BBDE8' }}>Gear</span></h2>
@@ -128,7 +141,6 @@ const ProductsPage = () => {
       </div>
 
       <div className="container py-5">
-        {/* Top bar */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <span style={{ color: 'var(--text-mid)', fontWeight: 500 }}>
             {filtered.length} product{filtered.length !== 1 ? 's' : ''} found
@@ -149,7 +161,6 @@ const ProductsPage = () => {
           </div>
         </div>
 
-        {/* Mobile filter drawer */}
         {showFilters && (
           <div className="d-lg-none mb-4">
             <div className="d-flex justify-content-between align-items-center mb-2">
@@ -173,7 +184,7 @@ const ProductsPage = () => {
             ) : filtered.length > 0 ? (
               <div className="row g-4">
                 {filtered.map(product => (
-                  <div className="col-12 col-md-6 col-xl-4" key={product.id}>
+                  <div className="col-12 col-md-6 col-xl-4" key={product._id}>
                     <ProductCard product={product} />
                   </div>
                 ))}

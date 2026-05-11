@@ -11,17 +11,16 @@ const categories = [
 ];
 
 const LandingPage = () => {
-  const { visibleProducts: products } = useContext(ProductContext);
+  const { visibleProducts: products, loading } = useContext(ProductContext);
   const featuredProducts = [...products].sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 4);
 
   return (
     <div>
-      {/* ── HERO ── */}
+      {/* HERO SECTION */}
       <section
         className="page-hero d-flex align-items-center py-5 py-lg-0"
         style={{ minHeight: '88vh', position: 'relative', overflow: 'hidden' }}
       >
-        {/* decorative blobs */}
         <div style={{ position:'absolute', top:'-80px', right:'-80px', width:420, height:420, borderRadius:'50%', background:'rgba(123,189,232,0.12)', pointerEvents:'none' }} />
         <div style={{ position:'absolute', bottom:'-60px', left:'-60px', width:280, height:280, borderRadius:'50%', background:'rgba(78,142,162,0.12)', pointerEvents:'none' }} />
 
@@ -50,7 +49,6 @@ const LandingPage = () => {
                 </Link>
               </div>
 
-              {/* Stats row */}
               <div className="d-flex gap-4 mt-5 flex-wrap">
                 {[['10K+','Happy Customers'],['500+','Products'],['50+','Brands']].map(([n,l]) => (
                   <div key={l}>
@@ -75,7 +73,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── CATEGORY CARDS ── */}
+      {/* CATEGORY CARDS */}
       <section className="py-5 section-white">
         <div className="container py-3">
           <div className="text-center mb-5">
@@ -103,7 +101,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── FEATURED PRODUCTS ── */}
+      {/* FEATURED PRODUCTS */}
       <section className="py-5 section-surface">
         <div className="container py-3">
           <div className="d-flex justify-content-between align-items-end mb-5">
@@ -114,16 +112,29 @@ const LandingPage = () => {
             <Link to="/products" className="btn btn-outline-primary">View All</Link>
           </div>
           <div className="row g-4">
-            {featuredProducts.map(product => (
-              <div className="col-12 col-sm-6 col-lg-3" key={product.id}>
-                <ProductCard product={product} />
-              </div>
-            ))}
+            {loading ? (
+              // Show loading skeletons while products are loading
+              [...Array(4)].map((_, i) => (
+                <div className="col-12 col-sm-6 col-lg-3" key={i}>
+                  <div className="fitgear-card p-3">
+                    <div style={{ height: 200, background: 'var(--pale-blue)', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}></div>
+                    <div style={{ height: 20, background: 'var(--pale-blue)', width: '80%', marginBottom: '0.5rem', borderRadius: 4 }}></div>
+                    <div style={{ height: 15, background: 'var(--pale-blue)', width: '60%', borderRadius: 4 }}></div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              featuredProducts.map(product => (
+                <div className="col-12 col-sm-6 col-lg-3" key={product._id}>
+                  <ProductCard product={product} />
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
 
-      {/* ── PROMO BANNER ── */}
+      {/* PROMO BANNER */}
       <section style={{ background:'linear-gradient(135deg,var(--dark-blue),var(--teal))', padding:'4rem 0' }}>
         <div className="container text-center">
           <h2 style={{ color:'#fff', fontSize:'2.2rem', marginBottom:'0.75rem' }}>SUMMER SHRED SALE 🔥</h2>
