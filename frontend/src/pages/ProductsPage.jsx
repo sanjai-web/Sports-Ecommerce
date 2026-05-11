@@ -109,9 +109,9 @@ const ProductsPage = () => {
         <label className="form-label">
           Max Price: <span style={{ color: 'var(--accent)', fontWeight: 700 }}>₹{priceRange.toLocaleString()}</span>
         </label>
-        <input type="range" className="form-range" min="0" max="50000" step="1000" value={priceRange} onChange={e => setPriceRange(Number(e.target.value))} />
+        <input type="range" className="form-range" min="0" max="35000" step="500" value={priceRange} onChange={e => setPriceRange(Number(e.target.value))} />
         <div className="d-flex justify-content-between" style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
-          <span>₹0</span><span>₹50,000</span>
+          <span>₹0</span><span>₹35,000</span>
         </div>
       </div>
     </div>

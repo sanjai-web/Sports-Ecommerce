@@ -62,7 +62,7 @@ const LandingPage = () => {
             </div>
 
             <div className="col-lg-6 d-none d-lg-flex justify-content-center">
-              <div style={{ position:'relative', width:420, height:420 }}>
+              <div style={{ position:'relative', width:550, height:550 }}>
                 <div style={{ position:'absolute', inset:0, borderRadius:'50%', background:'rgba(123,189,232,0.1)', border:'2px solid rgba(123,189,232,0.2)' }} />
                 <img
                   src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"

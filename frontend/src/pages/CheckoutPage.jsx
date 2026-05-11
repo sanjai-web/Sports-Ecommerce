@@ -84,7 +84,7 @@ const CheckoutPage = () => {
                 </div>
                 {[
                   { value: 'cod', label: 'Cash on Delivery', sub: 'Pay when your order arrives', enabled: true },
-                  { value: 'card', label: 'Credit / Debit Card', sub: 'Coming soon', enabled: false },
+                  { value: 'card', label: 'Credit / Debit Card', sub: 'Coming soon', enabled: false  },
                   { value: 'upi', label: 'UPI Payment', sub: 'Coming soon', enabled: false },
                 ].map(({ value, label, sub, enabled }) => (
                   <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', border: `1.5px solid ${form.paymentMode === value ? 'var(--primary)' : 'var(--border)'}`, borderRadius: 'var(--radius-sm)', marginBottom: '0.75rem', background: form.paymentMode === value ? 'rgba(10,65,116,0.04)' : 'transparent', cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.5 }}>
