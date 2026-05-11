@@ -238,7 +238,8 @@ app.get("/api/products/:id", async (req, res) => {
 // ADD new product (Admin only - you can add middleware later)
 app.post("/api/products", async (req, res) => {
   try {
-    const { name, brand, category, price, discount, image, popularity } = req.body;
+    const { name, brand, category, price, discount, image, popularity } =
+      req.body;
 
     const newProduct = new Product({
       name,
@@ -270,7 +271,16 @@ app.post("/api/products", async (req, res) => {
 // UPDATE product
 app.put("/api/products/:id", async (req, res) => {
   try {
-    const { name, brand, category, price, discount, image, popularity, hidden } = req.body;
+    const {
+      name,
+      brand,
+      category,
+      price,
+      discount,
+      image,
+      popularity,
+      hidden,
+    } = req.body;
 
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -286,7 +296,8 @@ app.put("/api/products/:id", async (req, res) => {
     product.price = price || product.price;
     product.discount = discount !== undefined ? discount : product.discount;
     product.image = image || product.image;
-    product.popularity = popularity !== undefined ? popularity : product.popularity;
+    product.popularity =
+      popularity !== undefined ? popularity : product.popularity;
     product.hidden = hidden !== undefined ? hidden : product.hidden;
 
     await product.save();
@@ -329,24 +340,22 @@ app.delete("/api/products/:id", async (req, res) => {
   }
 });
 
-
-
 // ================= GET ALL USERS (Admin) =================
 
 app.get("/api/auth/users", async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find().select("-password");
     res.json({
       success: true,
-      users: users.map(u => ({
+      users: users.map((u) => ({
         id: u._id,
         name: u.name,
         email: u.email,
         mobile: u.mobile,
         address: u.address,
         role: u.role,
-        createdAt: u.createdAt
-      }))
+        createdAt: u.createdAt,
+      })),
     });
   } catch (error) {
     console.log(error);
@@ -395,8 +404,6 @@ app.put("/api/auth/update-role/:id", async (req, res) => {
     });
   }
 });
-
-
 
 // ================= ERROR HANDLING =================
 

@@ -4,8 +4,14 @@ import { CartContext } from '../contexts/CartContext';
 import { FaTrash, FaMinus, FaPlus, FaArrowRight, FaShoppingBag } from 'react-icons/fa';
 
 const CartPage = () => {
-  const { cart, updateQuantity, removeFromCart, cartTotal } = useContext(CartContext);
+  const { cart, updateQuantity, removeFromCart } = useContext(CartContext);
   const navigate = useNavigate();
+
+  // Calculate cart total
+  const cartTotal = cart.reduce((sum, item) => {
+    const discountedPrice = item.product.price - (item.product.price * (item.product.discount || 0) / 100);
+    return sum + (discountedPrice * item.quantity);
+  }, 0);
 
   if (cart.length === 0) return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -31,34 +37,64 @@ const CartPage = () => {
           <div className="col-lg-8">
             <div className="fitgear-card overflow-hidden">
               {cart.map((item, idx) => {
-                const finalPrice = item.price - (item.price * (item.discount || 0) / 100);
+                // Access product properties from the nested product object
+                const product = item.product;
+                const finalPrice = product.price - (product.price * (product.discount || 0) / 100);
+                
                 return (
-                  <div key={item.id} style={{ padding: '1.25rem 1.5rem', borderBottom: idx < cart.length - 1 ? '1.5px solid var(--border)' : 'none' }}>
+                  <div key={product._id} style={{ padding: '1.25rem 1.5rem', borderBottom: idx < cart.length - 1 ? '1.5px solid var(--border)' : 'none' }}>
                     <div className="row align-items-center g-3">
                       <div className="col-3 col-md-2">
                         <div style={{ background: 'linear-gradient(135deg, #f8fbff, var(--pale-blue))', borderRadius: 'var(--radius-sm)', padding: '0.5rem', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <img src={item.image} alt={item.name} style={{ maxWidth: '100%', maxHeight: 60, objectFit: 'contain' }} />
+                          <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            style={{ maxWidth: '100%', maxHeight: 60, objectFit: 'contain' }}
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/60x60?text=Product';
+                            }}
+                          />
                         </div>
                       </div>
                       <div className="col-9 col-md-4">
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>{item.brand}</div>
-                        <div style={{ fontFamily: 'Outfit', fontWeight: 700, color: 'var(--navy)', fontSize: '0.95rem', lineHeight: 1.3, marginBottom: 4 }}>{item.name}</div>
-                        <div style={{ fontFamily: 'Outfit', fontWeight: 800, color: 'var(--dark-blue)', fontSize: '1.1rem' }}>₹{finalPrice.toLocaleString()}</div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
+                          {product.brand}
+                        </div>
+                        <div style={{ fontFamily: 'Outfit', fontWeight: 700, color: 'var(--navy)', fontSize: '0.95rem', lineHeight: 1.3, marginBottom: 4 }}>
+                          {product.name}
+                        </div>
+                        <div style={{ fontFamily: 'Outfit', fontWeight: 800, color: 'var(--dark-blue)', fontSize: '1.1rem' }}>
+                          ₹{finalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
                       </div>
                       <div className="col-6 col-md-4 d-flex justify-content-start justify-content-md-center">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1.5px solid var(--border)', borderRadius: 50, overflow: 'hidden' }}>
-                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} style={{ background: 'none', border: 'none', padding: '6px 12px', cursor: 'pointer', color: 'var(--text-mid)', display: 'flex', alignItems: 'center' }}>
+                          <button 
+                            onClick={() => updateQuantity(product._id, item.quantity - 1)} 
+                            style={{ background: 'none', border: 'none', padding: '6px 12px', cursor: 'pointer', color: 'var(--text-mid)', display: 'flex', alignItems: 'center' }}
+                          >
                             <FaMinus style={{ fontSize: '0.7rem' }} />
                           </button>
-                          <span style={{ padding: '6px 12px', fontWeight: 700, color: 'var(--navy)', minWidth: 36, textAlign: 'center' }}>{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)} style={{ background: 'none', border: 'none', padding: '6px 12px', cursor: 'pointer', color: 'var(--text-mid)', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ padding: '6px 12px', fontWeight: 700, color: 'var(--navy)', minWidth: 36, textAlign: 'center' }}>
+                            {item.quantity}
+                          </span>
+                          <button 
+                            onClick={() => updateQuantity(product._id, item.quantity + 1)} 
+                            style={{ background: 'none', border: 'none', padding: '6px 12px', cursor: 'pointer', color: 'var(--text-mid)', display: 'flex', alignItems: 'center' }}
+                          >
                             <FaPlus style={{ fontSize: '0.7rem' }} />
                           </button>
                         </div>
                       </div>
                       <div className="col-6 col-md-2 d-flex align-items-center justify-content-end gap-3">
-                        <span style={{ fontFamily: 'Outfit', fontWeight: 800, color: 'var(--dark-blue)' }}>₹{(finalPrice * item.quantity).toLocaleString()}</span>
-                        <button onClick={() => removeFromCart(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E63946', padding: 4 }} title="Remove">
+                        <span style={{ fontFamily: 'Outfit', fontWeight: 800, color: 'var(--dark-blue)' }}>
+                          ₹{(finalPrice * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <button 
+                          onClick={() => removeFromCart(product._id)} 
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E63946', padding: 4 }} 
+                          title="Remove"
+                        >
                           <FaTrash style={{ fontSize: '0.85rem' }} />
                         </button>
                       </div>
@@ -68,12 +104,16 @@ const CartPage = () => {
               })}
             </div>
           </div>
+          
+          {/* Order Summary */}
           <div className="col-lg-4">
             <div className="fitgear-card p-4 sticky-top" style={{ top: 80 }}>
               <h5 style={{ color: 'var(--navy)', marginBottom: '1.25rem', fontFamily: 'Outfit' }}>Order Summary</h5>
               <div className="d-flex justify-content-between mb-3" style={{ fontSize: '0.9rem' }}>
                 <span style={{ color: 'var(--text-mid)' }}>Subtotal</span>
-                <span style={{ color: 'var(--text-dark)' }}>₹{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span style={{ color: 'var(--text-dark)' }}>
+                  ₹{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
               <div className="d-flex justify-content-between mb-3" style={{ fontSize: '0.9rem' }}>
                 <span style={{ color: 'var(--text-mid)' }}>Shipping</span>
@@ -86,7 +126,10 @@ const CartPage = () => {
                   ₹{cartTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <button className="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2" onClick={() => navigate('/checkout')}>
+              <button 
+                className="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2" 
+                onClick={() => navigate('/checkout')}
+              >
                 Proceed to Checkout <FaArrowRight />
               </button>
               <div className="text-center mt-3">
